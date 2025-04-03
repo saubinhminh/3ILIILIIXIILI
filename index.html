@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xem PDF theo ngày</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      margin: 0;
+      background: url('NenVuTru.png') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+
+    h2, h3 {
+      text-align: center;
+      margin: 10px 0;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    input[type="date"] {
+      font-size: 16px;
+      padding: 5px;
+      width: 100%;
+      max-width: 300px;
+      display: block;
+      margin: auto;
+    }
+
+    iframe {
+      width: 100%;
+      height: 60vh;
+      border: 1px solid #fff;
+      margin-bottom: 20px;
+      display: none;
+      background-color: white;
+    }
+
+    #loadMsg {
+      text-align: center;
+      margin-top: 10px;
+      color: #ccc;
+    }
+
+    .label {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>CHỌN NGÀY XEM BÁO CÁO</h2>
+  <input type="date" id="datePicker" />
+
+  <div id="loadMsg"></div>
+
+  <div id="labelBAN" class="label">File BÁN</div>
+  <iframe id="banViewer"></iframe>
+
+  <div id="labelQUY" class="label">File QUỸ</div>
+  <iframe id="quyViewer"></iframe>
+
+  <div id="labelXUAT" class="label">File XUẤT</div>
+  <iframe id="xuatViewer"></iframe>
+
+  <script>
+    const datePicker = document.getElementById('datePicker');
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    datePicker.value = todayStr;
+    datePicker.max = todayStr;
+
+    const banViewer = document.getElementById('banViewer');
+    const quyViewer = document.getElementById('quyViewer');
+    const xuatViewer = document.getElementById('xuatViewer');
+    const loadMsg = document.getElementById('loadMsg');
+
+    const labelBAN = document.getElementById('labelBAN');
+    const labelQUY = document.getElementById('labelQUY');
+    const labelXUAT = document.getElementById('labelXUAT');
+
+    function checkFileExists(url) {
+      return fetch(url, { method: 'HEAD' })
+        .then(res => res.ok)
+        .catch(() => false);
+    }
+
+    async function loadPDFsByDate(dateValue) {
+      const selectedDate = new Date(dateValue);
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const year = selectedDate.getFullYear();
+      const dateStr = `${day}${month}${year}`;
+
+      const files = {
+        BAN: `3BAN${dateStr}.pdf`,
+        QUY: `3QUY${dateStr}.pdf`,
+        XUAT: `3XUAT${dateStr}.pdf`
+      };
+
+      loadMsg.innerText = "Đang kiểm tra file...";
+      banViewer.style.display = quyViewer.style.display = xuatViewer.style.display = "none";
+      labelBAN.style.display = labelQUY.style.display = labelXUAT.style.display = "none";
+
+      const [banExists, quyExists, xuatExists] = await Promise.all([
+        checkFileExists(files.BAN),
+        checkFileExists(files.QUY),
+        checkFileExists(files.XUAT)
+      ]);
+
+      const anyExists = banExists || quyExists || xuatExists;
+
+      if (anyExists) {
+        loadMsg.innerText = "";
+
+        if (banExists) {
+          banViewer.src = files.BAN;
+          banViewer.style.display = "block";
+          labelBAN.style.display = "block";
+        }
+
+        if (quyExists) {
+          quyViewer.src = files.QUY;
+          quyViewer.style.display = "block";
+          labelQUY.style.display = "block";
+        }
+
+        if (xuatExists) {
+          xuatViewer.src = files.XUAT;
+          xuatViewer.style.display = "block";
+          labelXUAT.style.display = "block";
+        }
+      } else {
+        loadMsg.innerText = "Không tìm thấy file nào cho ngày đã chọn.";
+      }
+    }
+
+    // Tự tải file hôm nay khi mở
+    loadPDFsByDate(todayStr);
+
+    // Khi chọn ngày khác
+    datePicker.addEventListener('change', () => {
+      loadPDFsByDate(datePicker.value);
+    });
+  </script>
+
+</body>
+</html>
