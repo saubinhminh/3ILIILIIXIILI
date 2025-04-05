@@ -66,6 +66,12 @@
   <div id="pdfContainer"></div>
 
   <script>
+    function checkFileExists(url) {
+      return fetch(url, { method: 'HEAD' })
+        .then(res => res.ok)
+        .catch(() => false);
+    }
+
     const datePicker = document.getElementById('datePicker');
     const container = document.getElementById('pdfContainer');
     const todayStr = new Date().toISOString().split('T')[0];
@@ -85,7 +91,7 @@
       return div;
     }
 
-    function loadPDFIcons(dateValue) {
+    async function loadPDFIcons(dateValue) {
       const selectedDate = new Date(dateValue);
       const dd = String(selectedDate.getDate()).padStart(2, '0');
       const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
@@ -93,14 +99,22 @@
       const dateStr = `${dd}${mm}${yyyy}`;
 
       const files = {
-        "/mnt/data/nutbanhang.png": `3BAN${dateStr}.pdf`,
-        "/mnt/data/nutthuchi.png": `3QUY${dateStr}.pdf`,
-        "/mnt/data/nutxuatkho.png": `3XUAT${dateStr}.pdf`
+        "nutbanhang.png": `3BAN${dateStr}.pdf`,
+        "nutthuchi.png": `3QUY${dateStr}.pdf`,
+        "nutxuatkho.png": `3XUAT${dateStr}.pdf`
       };
 
       container.innerHTML = "";
+
       for (const [img, file] of Object.entries(files)) {
-        container.appendChild(createIcon(img.split('/mnt/data/')[1], file));
+        const exists = await checkFileExists(file);
+        if (exists) {
+          container.appendChild(createIcon(img, file));
+        }
+      }
+
+      if (container.innerHTML === "") {
+        container.innerHTML = "<p>Không tìm thấy file nào cho ngày đã chọn.</p>";
       }
     }
 
